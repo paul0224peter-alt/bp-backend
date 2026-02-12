@@ -14,28 +14,43 @@ app.use(bodyParser.json());
 
 let bpRecords = []; // 暫存紀錄
 
-// 1. 接收資料的 API
-app.post('/api/bp', (req, res) => {
-    console.log("--- 收到新請求 ---");
-    console.log("數據內容:", req.body); // 這行會在你的黑視窗印出資料
+const mongoose = require('mongoose');
+require('dotenv').config();
 
-    const { sys, dia, pulse, level } = req.body;
-    const newRecord = {
-        id: Date.now(),
-        sys,
-        dia,
-        pulse,
-        level,
-        time: new Date().toLocaleString()
-    };
-    
-    bpRecords.push(newRecord);
-    res.status(201).json({ message: '儲存成功', data: newRecord });
+// 連接資料庫 (請將網址換成你在第一階段複製的那串)
+mongoose.connect('你的MongoDB連線網址')
+  .then(() => console.log('MongoDB 連線成功！'))
+  .catch(err => console.error('連線失敗：', err));
+
+// 定義資料結構 (Schema)
+const RecordSchema = new mongoose.Schema({
+  sys: String,
+  dia: String,
+  level: String,
+  time: { type: String, default: () => new Date().toLocaleString('zh-TW') }
 });
 
-// 2. 取得資料的 API
-app.get('/api/bp', (req, res) => {
-    res.json(bpRecords);
+const Record = mongoose.model('Record', RecordSchema);
+
+// 修改 POST 路由：存入資料庫
+app.post('/api/bp', async (req, res) => {
+  try {
+    const newRecord = new Record(req.body);
+    await newRecord.save();
+    res.status(201).send(newRecord);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+// 修改 GET 路由：從資料庫讀取
+app.get('/api/bp', async (req, res) => {
+  try {
+    const records = await Record.find().sort({ _id: -1 }); // 取得所有紀錄並倒序排列
+    res.json(records);
+  } catch (err) {
+    res.status(500).send(err);
+  }
 });
 
 app.listen(PORT, () => {
