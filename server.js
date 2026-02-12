@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -5,20 +6,19 @@ const bodyParser = require('body-parser');
 const app = express();
 const PORT = process.env.PORT || 5000; // Render 會自動分配 Port
 
-app.listen(PORT, () => {
-    console.log(`伺服器運行中，埠號：${PORT}`);
-});
-
 app.use(cors());
 app.use(bodyParser.json());
 
 let bpRecords = []; // 暫存紀錄
 
+const mongoURI = process.env.MONGO_URI; 
+
+
 const mongoose = require('mongoose');
-require('dotenv').config();
+
 
 // 連接資料庫 (請將網址換成你在第一階段複製的那串)
-mongoose.connect('你的MongoDB連線網址')
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB 連線成功！'))
   .catch(err => console.error('連線失敗：', err));
 
